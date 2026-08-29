@@ -1,0 +1,60 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = [ "hatchling" ]
+
+[project]
+name = "citations"
+version = "0.4.0"
+description = "A library of quotations checked against the sources they came from"
+readme = "README.md"
+keywords = [ "bibliography", "bibtex", "citations", "provenance", "reproducibility" ]
+license = { text = "MIT" }
+authors = [ { name = "Anonymous Author", email = "anon@example.invalid" } ]
+requires-python = ">=3.11"
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+dependencies = [ "platformdirs>=3", "provenance-core>=0.4,<0.5", "pydantic>=2.9", "pyyaml>=6.0.2" ]
+optional-dependencies.lint = [ "papis>=0.15" ]
+# Paperclip's own client is distributed as a wheel at a URL rather than through an index, and a
+# direct reference cannot appear in metadata uploaded to PyPI. So this extra installs the HTTP
+# layer and `citations.paperclip` speaks Paperclip's endpoint itself. Without the extra the
+# resolver reports `unavailable` and its sources come out `unchecked`; it never fails a citation.
+optional-dependencies.paperclip = [ "requests>=2.31" ]
+# Pure-Python PDF readers. Optional because poppler resolves more passages than either and
+# most machines that verify quotations already have it; required on a machine where installing
+# a system package is not on offer, which is the case `pip install "git+https://github.com/anon-submission-account/reproducible-science"` has to serve.
+# Deliberately not PyMuPDF: it is AGPL and would relicense this package.
+optional-dependencies.pdf = [ "pdfplumber>=0.11.4", "pypdf>=5.1" ]
+optional-dependencies.pdfplumber = [ "pdfplumber>=0.11.4" ]
+optional-dependencies.pypdf = [ "pypdf>=5.1" ]
+urls.Changelog = "https://github.com/anon-submission-account/reproducible-science/blob/main/CHANGELOG.md"
+urls.Homepage = "https://github.com/anon-submission-account/reproducible-science"
+urls.Issues = "https://github.com/anon-submission-account/reproducible-science/issues"
+urls.Source = "https://github.com/anon-submission-account/reproducible-science/tree/main/packages/citations"
+scripts.citations = "citations.cli:main"
+
+[dependency-groups]
+dev = [
+  "pytest>=9.1.1",
+]
+
+[tool.hatch]
+build.targets.wheel.packages = [ "src/citations" ]
+
+[tool.deptry]
+# invoked as a subprocess by `citations lint`, so no import graph can see it. Named
+# here rather than silenced globally: a genuinely unused dependency should still be reported.
+per_rule_ignores.DEP002 = [ "papis" ]
+# The optional readers are imported under try/except in `readers.py`, which deptry reads as a
+# dependency the code never uses. Removing either one would make `pip install "git+https://github.com/anon-submission-account/reproducible-science"`
+# unable to read a PDF without a system binary.
+per_rule_ignores.DEP004 = [ "pdfplumber", "pypdf" ]
+# Imported under a guard in `citations.paperclip` and installed only by the `paperclip` extra.
+per_rule_ignores.DEP003 = [ "requests" ]
+# Without this every intra-package import reads as a transitive dependency on itself.
+known_first_party = [ "citations" ]

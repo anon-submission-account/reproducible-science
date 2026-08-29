@@ -1,0 +1,225 @@
+"""The command must never report success on a run that examined nothing."""
+
+from __future__ import annotations
+
+import hashlib
+import os
+import subprocess
+import sys
+
+import pytest
+import yaml
+from citations.models import load_claim_file
+
+#: Passed through to the child when set. The env below is deliberately minimal -- HOME and
+#: CITATIONS_HOME decide which library is read, and inheriting the real ones would make these
+#: tests depend on the machine. Coverage needs three variables to measure a subprocess, and
+#: dropping them reported this CLI at 18% while its tests exercised it.
+_COVERAGE_ENV = ("COVERAGE_FILE", "COVERAGE_PROCESS_START", "PYTHONPATH")
+
+
+def run(args, cwd, env_home=None):
+    env = {"PATH": "/usr/bin:/bin:/usr/local/bin", "HOME": str(cwd)}
+    env.update({k: os.environ[k] for k in _COVERAGE_ENV if k in os.environ})
+    if env_home:
+        env["CITATIONS_HOME"] = str(env_home)
+    return subprocess.run(
+        [sys.executable, "-m", "citations.cli", *args],
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+
+@pytest.fixture
+def library(tmp_path):
+    (tmp_path / "records").mkdir()
+    return tmp_path
+
+
+def test_zero_quotations_does_not_exit_zero(library):
+    r = run(["verify"], library, library)
+    assert r.returncode != 0, "a run that checked nothing must not look like a pass"
+    assert "nothing to check" in r.stdout
+    assert "claims" in r.stdout
+
+
+def test_zero_quotations_says_why_and_what_to_do(library):
+    r = run(["verify"], library, library)
+    assert "--claims" in r.stdout, "must tell the user where quotations actually live"
+
+
+def test_missing_library_is_an_error_not_an_empty_pass(tmp_path):
+    r = run(["verify"], tmp_path, tmp_path / "nowhere")
+    assert r.returncode != 0
+
+
+def test_a_claims_directory_with_no_quotes_still_refuses(tmp_path):
+    claims = tmp_path / "claims"
+    claims.mkdir()
+    (claims / "empty.yaml").write_text(
+        yaml.safe_dump({"claim": "empty", "source": {"citation": "x"}, "evidence": {}})
+    )
+    r = run(["verify", "--claims", str(claims)], tmp_path, tmp_path)
+    assert r.returncode != 0
+    assert "nothing to check" in r.stdout
+
+
+def test_help_lists_every_subcommand(tmp_path):
+    r = run([], tmp_path)
+    for c in ("verify", "resolve", "build", "lint", "link"):
+        assert c in r.stdout
+
+
+def test_claims_block_is_read_under_either_name(tmp_path):
+    # One repo writes `evidence:`, another writes `claims:`. Reading one spelling made the
+    # command find zero quotes and say so, which reads identically to a paper with none.
+    src = tmp_path / "s.txt"
+    src.write_text("the measured angle matches the Haar expectation")
+    for name, block in (("a.yaml", "evidence"), ("b.yaml", "claims")):
+        (tmp_path / name).write_text(
+            f"source:\n  citation: x\n  local: {src}\n{block}:\n  c1:\n    quotes:\n"
+            f"      - exact: 'matches the Haar expectation'\n"
+        )
+    files = [load_claim_file(tmp_path / n) for n in ("a.yaml", "b.yaml")]
+    assert [len(f.claims) for f in files] == [1, 1]
+    assert {f.name for f in files} == {"a", "b"}
+    assert all(f.claims["c1"].quotes[0].text == "matches the Haar expectation" for f in files)
+
+
+# --- which library did that clean run actually check? ------------------------------------------
+
+
+def test_origin_reports_the_rule_that_found_the_library(tmp_path, monkeypatch):
+    # the walk-up only applies when the env var is not set, and it is set on the machine this
+    # library was written on -- without clearing it the test asserts the wrong rule
+    monkeypatch.delenv("CITATIONS_HOME", raising=False)
+    from citations import paths
+
+    proj = tmp_path / "paper"
+    (proj / ".citations" / "records").mkdir(parents=True)
+    deep = proj / "sections" / "intro"
+    deep.mkdir(parents=True)
+    p, origin = paths.find_with_origin(deep)
+    assert origin == "project"
+    assert p == (proj / ".citations").resolve() or p == proj / ".citations"
+
+
+def test_env_overrides_the_walk_up(tmp_path, monkeypatch):
+    from citations import paths
+
+    proj = tmp_path / "paper"
+    (proj / ".citations" / "records").mkdir(parents=True)
+    other = tmp_path / "elsewhere"
+    other.mkdir()
+    monkeypatch.setenv("CITATIONS_HOME", str(other))
+    _, origin = paths.find_with_origin(proj)
+    assert origin == "CITATIONS_HOME", "an env override that is silently ignored is the worst case"
+
+
+def test_find_still_returns_just_the_path(tmp_path):
+    from citations import paths
+
+    proj = tmp_path / "paper"
+    (proj / ".citations" / "records").mkdir(parents=True)
+    assert paths.find(proj) == paths.find_with_origin(proj)[0]
+
+
+def test_verify_names_the_library_it_checked(library):
+    (library / "records" / "r.yaml").write_text(
+        yaml.safe_dump({"slug": "r", "quotes": [{"text": "anything at all", "page": None}]})
+    )
+    r = run(["verify"], library, library)
+    assert str(library) in r.stdout, (
+        "a clean run against the wrong library reads exactly like a clean run against the right one"
+    )
+
+
+# --- did the command notice the source had changed? --------------------------------------------
+
+
+SOURCE_TEXT = "the measured angle matches the Haar expectation for this ensemble"
+
+
+def _pinned_claims(tmp_path, sha):
+    src = tmp_path / "source.txt"
+    src.write_text(SOURCE_TEXT)
+    claims = tmp_path / "claims"
+    claims.mkdir()
+    (claims / "angle.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "source": {"citation": "x", "local": str(src), "sha256": sha},
+                "evidence": {
+                    "c1": {"quotes": [{"exact": "matches the Haar expectation for this ensemble"}]}
+                },
+            }
+        )
+    )
+    return claims, src
+
+
+def test_verify_fails_when_the_source_no_longer_matches_its_pin(tmp_path):
+    # Report.ok is asserted on a hand-built Report elsewhere; nothing asserted that the command
+    # ever populates broken_pins, so every quote resolving against an edited source read as a
+    # clean run.
+    claims, _ = _pinned_claims(tmp_path, "0" * 64)
+    r = run(["verify", "--claims", str(claims)], tmp_path)
+    assert r.returncode != 0, "every quote resolved -- against a document the record does not pin"
+    assert "changed since being pinned" in r.stdout
+    assert "0000" in r.stdout, "the report has to show the pin it expected"
+
+
+def test_verify_passes_the_same_claims_when_the_pin_is_intact(tmp_path):
+    # The negative half: without this, a `verify` hardwired to fail would pass the test above.
+    digest = hashlib.sha256(SOURCE_TEXT.encode()).hexdigest()
+    claims, _ = _pinned_claims(tmp_path, digest)
+    r = run(["verify", "--claims", str(claims)], tmp_path)
+    assert r.returncode == 0, r.stdout
+    assert "changed since being pinned" not in r.stdout
+
+
+def test_every_outcome_the_checker_can_return_is_printed():
+    # `ambiguous` was added to `State` and not to `RESULTS`. The outcome table iterates
+    # RESULTS, so those quotations were counted and never printed: the table stopped summing
+    # to the quotation count above it, and the closing line fell through to "all found."
+    import typing
+
+    from citations import verify
+
+    assert set(typing.get_args(verify.State)) == set(cli_results())
+
+
+def cli_results():
+    from citations.cli import RESULTS
+
+    return RESULTS
+
+
+def test_ambiguous_alone_does_not_report_all_found(tmp_path):
+    # The passage occurs twice, so the record does not say which occurrence it pinned.
+    # Nothing failed, but nothing was established either, and the run must not read as clean.
+    src = tmp_path / "s.txt"
+    src.write_text("the angle matches the Haar expectation.\nAgain: matches the Haar expectation.")
+    (tmp_path / "a.yaml").write_text(
+        f"source:\n  citation: x\n  local: {src}\nclaims:\n  c1:\n    quotes:\n"
+        f"      - exact: 'matches the Haar expectation'\n"
+    )
+    r = run(["verify", "--claims", str(tmp_path)], tmp_path, tmp_path)
+    assert "all found." not in r.stdout, r.stdout
+    assert "ambiguous" in r.stdout, r.stdout
+
+
+def test_strict_names_the_quotations_it_fails_on(tmp_path):
+    # A count on its own says a build should fail and not what to open.
+    src = tmp_path / "s.txt"
+    src.write_text("the angle matches the Haar expectation.\nAgain: matches the Haar expectation.")
+    (tmp_path / "a.yaml").write_text(
+        f"source:\n  citation: x\n  local: {src}\nclaims:\n  c1:\n    quotes:\n"
+        f"      - exact: 'matches the Haar expectation'\n"
+    )
+    r = run(["verify", "--claims", str(tmp_path), "--strict"], tmp_path, tmp_path)
+    assert r.returncode == 1
+    assert "could not be checked at all" in r.stdout
+    assert "matches the Haar expectation" in r.stdout.split("could not be checked at all")[1]

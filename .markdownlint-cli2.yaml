@@ -1,0 +1,20 @@
+# Lint prose for defects, do not restyle it. The papers, registrations and review packets are
+# hand-wrapped, and a formatter fighting an author is worse than no formatter.
+config:
+  line-length: false          # prose wraps at 95; a hard cap fights the drafts
+  no-inline-html: false       # tables and anchors use it
+  first-line-heading: false   # fragments and templates start mid-document
+  single-title: false         # a packet appends a whole document verbatim, headings included
+  table-column-style: false   # pipe alignment is a matter of taste, not correctness
+  no-duplicate-heading:
+    siblings_only: true       # OSF headings repeat across registration sections
+ignores:
+  - "**/node_modules/**"
+  - ".venv/**"
+  - "packages/*/tests/conformance/cases/**"
+  # site/src/content/docs/{reference,tools}/ is written by sync-docs.mjs from the
+  # canonical Markdown elsewhere in this repository. Linting a generated copy reports
+  # the same defect twice, in a file that cannot be edited to fix it.
+  - "site/src/content/docs/reference/**"
+  - "site/src/content/docs/tools/**"
+  - "site/dist/**"

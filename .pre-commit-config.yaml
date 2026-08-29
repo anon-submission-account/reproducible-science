@@ -1,0 +1,190 @@
+# Three tiers. Commit hooks stay under about ten seconds; anything slower runs on push or in
+# CI, because a commit that takes three minutes is a commit people bypass.
+#
+#     make hooks        # or: prek install --hook-type pre-commit --hook-type pre-push
+#
+# `prek` is a faster drop-in and reads this same file; plain `pre-commit` works too.
+#
+# Order matters, and the run is arranged in four passes:
+#
+#   1. dangerous     a secret, or a file too large to want back
+#   2. parses        a formatter on a broken file wastes the round
+#   3. rewrite       formatters, which mutate and so must precede validators
+#   4. check         validators, which read the rewritten result
+#
+# Secret detection runs first on purpose: once a credential is committed, rotating it is the
+# only remedy, so it is worth failing before anything else has run.
+
+default_install_hook_types: [pre-commit, pre-push, commit-msg]
+default_stages: [pre-commit]
+
+# Nothing here may modify a file whose bytes are pinned. Three kinds:
+#
+#   * conformance fixtures, whose exact bytes are the fixture -- a trailing newline breaks
+#     every pin in the corpus, which happened the first time these hooks ran;
+#   * registrations, codebooks and frames, where a digest has been cited and any edit
+#     invalidates it;
+#
+# A formatting hook that rewrites a registration is worse than no hook: it breaks the record
+# silently, and the repair afterwards is indistinguishable from tampering.
+#
+# Moving a directory moves it out of this list too. These paths named `experiments/` before
+# the research directories were gathered under `research/`, and that rename left every pinned
+# file unprotected until the next run reformatted `published.bib`, whose digest a registration
+# cites. The manuscript and the addressability corpus have since moved to their own
+# repositories, which carry their own copy of this guard.
+exclude: |
+  (?x)^(
+    packages/repro/tests/conformance/cases/.*|
+    packages/repro/examples/.*|
+    research/.*/(frame\.json|published\.bib)|
+    uv\.lock
+  )$
+
+repos:
+  # ---- 1. dangerous ----------------------------------------------------------------------
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+
+  # ---- 2. parses -------------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: detect-private-key
+      - id: check-ast
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-merge-conflict
+      - id: check-case-conflict     # macOS hides case-only collisions that break on Linux
+      - id: check-symlinks
+      - id: destroyed-symlinks
+      - id: forbid-submodules
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: debug-statements
+
+  # ---- 3. rewrite ------------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: trailing-whitespace
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.4
+    hooks:
+      # check before format: a lint fix can leave code the formatter still wants to rewrap.
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/tox-dev/pyproject-fmt
+    rev: v2.10.0
+    hooks:
+      - id: pyproject-fmt
+
+  # ---- 4. check --------------------------------------------------------------------------
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: "0.26"
+    hooks:
+      - id: validate-pyproject
+        files: ^(pyproject\.toml|packages/[^/]+/pyproject\.toml)$
+
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.38.0
+    hooks:
+      - id: check-github-workflows
+      - id: check-dependabot
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
+
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.29.0
+    hooks:
+      - id: zizmor
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+    hooks:
+      - id: codespell
+        additional_dependencies: [tomli]
+
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.18.1
+    hooks:
+      - id: markdownlint-cli2
+        args: [--config, .markdownlint-cli2.yaml]
+
+  - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
+    rev: 3.11.1
+    hooks:
+      - id: editorconfig-checker
+        alias: ec
+
+  - repo: local
+    hooks:
+      - id: uv-lock-current
+        name: uv.lock matches the manifests
+        entry: uv lock --check
+        language: system
+        pass_filenames: false
+        files: ^(pyproject\.toml|packages/[^/]+/pyproject\.toml|uv\.lock)$
+
+      # `Co-Authored-By` is GitHub's credit convention and the wrong claim for a model, so
+      # the trailer goes, along with `Assisted-by:` and `Claude-Session:`. Disclosure belongs
+      # in a paper's acknowledgements and this repository's documentation, where a reader
+      # looks for it. Human co-authors are untouched. The `Attribution` workflow rejects the
+      # same set on a pull request, and `test_attribution_agreement.py` holds the two together.
+      - id: commit-attribution
+        name: no AI attribution trailers
+        entry: uv run python scripts/commit_msg_attribution.py
+        language: system
+        stages: [commit-msg]
+
+      # ---- pre-push: slower, repository-wide ---------------------------------------------
+      - id: pytest
+        name: the whole workspace's tests
+        entry: uv run pytest -q -x -n auto
+        language: system
+        pass_filenames: false
+        types_or: [python, toml]
+        stages: [pre-push]
+
+      - id: types
+        name: type checks
+        entry: uv run pyrefly check packages/repro/src packages/citations/src packages/results/src packages/prereg/src
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: import-linter
+        name: package dependency direction
+        entry: uv run lint-imports
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: vulture
+        name: dead code
+        entry: uv run vulture
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: deptry
+        name: declared dependencies match imports
+        entry: uv run python scripts/check_deps.py
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

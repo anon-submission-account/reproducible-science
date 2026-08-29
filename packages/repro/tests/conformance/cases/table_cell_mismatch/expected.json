@@ -1,0 +1,11 @@
+{
+  "outcomes": [
+    "mismatch"
+  ],
+  "reasons": [
+    "value_mismatch"
+  ],
+  "artifacts": {
+    "tab": "authoritative"
+  }
+}

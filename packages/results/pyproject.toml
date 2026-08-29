@@ -1,0 +1,38 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = [ "hatchling" ]
+
+[project]
+name = "results-cli"
+version = "0.4.0"
+description = "Seal a run, record what it produced, and verify the chain"
+readme = "README.md"
+keywords = [ "open science", "provenance", "reproducibility", "results" ]
+license = { text = "MIT" }
+authors = [ { name = "Anonymous Author", email = "anon@example.invalid" } ]
+requires-python = ">=3.11"
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+dependencies = [ "provenance-core>=0.4,<0.5" ]
+urls.Changelog = "https://github.com/anon-submission-account/reproducible-science/blob/main/CHANGELOG.md"
+urls.Homepage = "https://github.com/anon-submission-account/reproducible-science"
+urls.Issues = "https://github.com/anon-submission-account/reproducible-science/issues"
+urls.Source = "https://github.com/anon-submission-account/reproducible-science/tree/main/packages/results"
+scripts.results = "results.cli:main"
+
+[dependency-groups]
+dev = [
+  "pytest>=9.1.1",
+]
+
+[tool.hatch]
+build.targets.wheel.packages = [ "src/results" ]
+
+[tool.deptry]
+# Without this every intra-package import reads as a transitive dependency on itself.
+known_first_party = [ "results" ]

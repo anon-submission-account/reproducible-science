@@ -1,0 +1,85 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = [ "hatchling" ]
+
+[project]
+name = "reproducible-science"
+version = "0.4.0"
+description = "One contract for verifying declared evidence assertions against pinned artifacts"
+readme = "README.md"
+keywords = [ "citations", "open science", "preregistration", "provenance", "reproducibility" ]
+license = "MIT"
+authors = [ { name = "Anonymous Author", email = "anon@example.invalid" } ]
+requires-python = ">=3.11"
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  "citations>=0.4,<0.5",
+  # Floors, not bare names: without them a fresh install resolves whatever is oldest on
+  # PyPI, which is not the combination the tests exercise.
+  "prereg>=0.4,<0.5",
+  "provenance-core>=0.4,<0.5",
+  "pydantic>=2.9",
+  "pyyaml>=6.0.2",
+  "results-cli>=0.4,<0.5",
+]
+# Only needed to run the rule inside `adduce check`. repro itself never imports adduce.
+optional-dependencies.adduce = [ "adduce>=0.1.2" ]
+optional-dependencies.arrays = [
+  "numpy>=2.2.6",
+]
+urls.Changelog = "https://github.com/anon-submission-account/reproducible-science/blob/main/CHANGELOG.md"
+urls.Homepage = "https://github.com/anon-submission-account/reproducible-science"
+urls.Issues = "https://github.com/anon-submission-account/reproducible-science/issues"
+urls.Source = "https://github.com/anon-submission-account/reproducible-science/tree/main/packages/repro"
+scripts.repro = "repro.cli:main"
+# adduce discovers this at check time; declaring it costs nothing when adduce is absent.
+entry-points."adduce.rules".repro = "repro.integrations.adduce"
+
+[dependency-groups]
+dev = [
+  "adduce>=0.1.2",
+  "numpy>=2.2.6",
+  "pytest>=9.1.1",
+]
+
+[tool.hatch]
+build.targets.wheel.packages = [ "src/repro" ]
+
+[tool.uv]
+# Resolved from the workspace during development and from PyPI once published, so a
+# cross-package change is one commit rather than a release dance.
+sources.citations = { workspace = true }
+sources.prereg = { workspace = true }
+sources.results-cli = { workspace = true }
+
+[tool.deptry]
+# invoked as subprocesses by `repro init`, so no import graph can see it. Named
+# here rather than silenced globally: a genuinely unused dependency should still be reported.
+per_rule_ignores.DEP002 = [ "prereg", "results-cli" ]
+# Without this every intra-package import reads as a transitive dependency on itself.
+known_first_party = [ "repro" ]
+# The Claude Code plugin is not part of this distribution -- it ships through a marketplace,
+# not the wheel, and `citations-0.2.0-py3-none-any.whl` carries no plugin file. Its hooks are
+# standalone scripts that import a sibling package inside `try/except ImportError` and carry
+# a fallback for when it is absent, which is the opposite of an undeclared dependency.
+# `examples/` ships in neither: its scripts import each other by module name because they sit
+# in one directory and are run from it, which reads as an undeclared dependency of a wheel
+# that does not contain them.
+extend_exclude = [ "examples", "plugin" ]
+
+[tool.pytest]
+ini_options.addopts = "-m 'not corpus'"
+ini_options.markers = [
+  "corpus: reads repositories outside this one, and may fetch them",
+  "integration: exercises a third-party library that is not a runtime dependency",
+]

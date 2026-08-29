@@ -1,0 +1,17 @@
+{
+  "name": "prereg",
+  "description": "Freeze a plan before you run it, and record what changed after",
+  "version": "0.2.0",
+  "author": {
+    "name": "Anonymous Author",
+    "email": "anon@example.invalid"
+  },
+  "repository": "https://github.com/anon-submission-account/reproducible-science/tree/main/packages/prereg",
+  "license": "MIT",
+  "keywords": [
+    "preregistration",
+    "reproducibility",
+    "provenance",
+    "experiments"
+  ]
+}

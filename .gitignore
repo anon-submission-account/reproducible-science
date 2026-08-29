@@ -1,0 +1,45 @@
+__pycache__/
+*.pyc
+.venv/
+dist/
+*.egg-info/
+.DS_Store
+
+# adduce writes its report and the repro sidecar here
+.adduce/
+
+# Publisher PDFs for the prior-art dig. Kept locally so `citations verify` can resolve
+# quotations against them; not redistributable, and this repository is public.
+
+# coverage byproducts
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Internal review packets: simulated-referee rounds and self-critique.
+# Local only -- this repository may go public.
+REVIEW_PACKET*.md
+
+# Development corpus: the downloaded articles and shallow clones are rebuildable from
+# frame.json, but the measurements taken from them are not -- ignoring the whole directory
+# lost one 32-article run when the tree was tidied. Subdirectories only, as arxiv_corpus does.
+# documentation site (Docusaurus)
+website/node_modules/
+website/build/
+website/.docusaurus/
+
+# nbconvert output from verifying the demo notebook runs
+notebooks/executed.ipynb
+
+# jupyter lite build state
+.jupyterlite.doit.db
+
+# arXiv LaTeX sources fetched for testing, rebuildable from resolved.json
+
+# CORE-Bench capsules: ~39 MB each, rebuildable from core_train.json
+
+# CORE-Bench capsule metadata: 4.3 MB, fetched from siegelz/core-bench
+
+# Internal reviews are never tracked. They live in reproducible-science-internal-audits.
+docs/reviews/

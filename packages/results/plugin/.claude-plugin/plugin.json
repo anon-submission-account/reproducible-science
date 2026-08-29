@@ -1,0 +1,19 @@
+{
+  "name": "results",
+  "description": "Seal a run's inputs, record what it produced, bind every number in a manuscript to the run behind it as it is written, and verify the chain",
+  "version": "0.2.0",
+  "author": {
+    "name": "Anonymous Author",
+    "email": "anon@example.invalid"
+  },
+  "repository": "https://github.com/anon-submission-account/reproducible-science/tree/main/packages/results",
+  "license": "MIT",
+  "keywords": [
+    "claims",
+    "manuscript",
+    "open science",
+    "provenance",
+    "reproducibility",
+    "results"
+  ]
+}

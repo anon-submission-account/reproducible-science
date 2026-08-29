@@ -1,0 +1,9 @@
+{
+  "Exclude": [
+    "^packages/repro/tests/conformance/cases/",
+    "uv\\.lock$"
+  ],
+  "Disable": {
+    "Indentation": true
+  }
+}

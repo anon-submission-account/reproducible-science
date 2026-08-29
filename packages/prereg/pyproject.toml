@@ -1,0 +1,35 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = [ "hatchling" ]
+
+[project]
+name = "prereg"
+version = "0.4.0"
+description = "Preregister your plan to prevent p-hacking and unfalsifiable post-hoc analysis"
+readme = "README.md"
+keywords = [ "open science", "osf", "preregistration", "reproducibility" ]
+license = { text = "MIT" }
+authors = [ { name = "Anonymous Author", email = "anon@example.invalid" } ]
+requires-python = ">=3.11"
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+# One dependency, itself dependency-free: the digest and git helpers this shares with
+# the other tools. Everything else is stdlib.
+dependencies = [ "provenance-core>=0.4,<0.5" ]
+urls.Changelog = "https://github.com/anon-submission-account/reproducible-science/blob/main/CHANGELOG.md"
+urls.Homepage = "https://github.com/anon-submission-account/reproducible-science"
+urls.Issues = "https://github.com/anon-submission-account/reproducible-science/issues"
+urls.Source = "https://github.com/anon-submission-account/reproducible-science/tree/main/packages/prereg"
+scripts.prereg = "prereg.cli:main"
+
+[tool.hatch]
+build.targets.wheel.packages = [ "src/prereg" ]
+
+[tool.deptry]
+# Without this every intra-package import reads as a transitive dependency on itself.
+known_first_party = [ "prereg" ]
