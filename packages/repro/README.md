@@ -1,17 +1,21 @@
 # reproducible-science
 
+[![pypi](https://img.shields.io/pypi/v/reproducible-science)](https://pypi.org/project/reproducible-science/)
+[![python](https://img.shields.io/pypi/pyversions/reproducible-science)](https://pypi.org/project/reproducible-science/)
+[![license](https://img.shields.io/pypi/l/reproducible-science)](https://github.com/anon-submission-account/reproducible-science/blob/main/LICENSE)
+[![docs](https://img.shields.io/badge/docs-live-blue)](https://anon-submission-account.github.io/reproducible-science/)
 
 Check whether a paper's claims match its artifacts.
 
-Part of [reproducible-science](https://github.com/anon-submission-account/reproducible-science) alongside `citations`, `results` and `prereg` — see the [documentation](packages/repro/).
+Part of [reproducible-science](https://github.com/anon-submission-account/reproducible-science) alongside `citations`, `results` and `prereg` — see the [documentation](https://anon-submission-account.github.io/reproducible-science/tools/repro/).
 
 ## Install
 
 ```bash
-pip install "git+https://github.com/anon-submission-account/reproducible-science"
+pip install reproducible-science
 ```
 
-This installs `repro` and its three dependencies: [`prereg`](packages/prereg), [`citations`](packages/citations), [`results-cli`](packages/results-cli).
+This installs `repro` and its three dependencies: [`prereg`](https://pypi.org/project/prereg/), [`citations`](https://pypi.org/project/citations/), [`results-cli`](https://pypi.org/project/results-cli/).
 
 ## Try it
 
@@ -64,6 +68,28 @@ repro verify
 
 Reads `repro.yaml` and checks every declared evidence assertion against the artifact it names. It spawns nothing: `prereg`, `results` and `citations` are separate commands.
 
+## On every commit
+
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/anon-submission-account/reproducible-science
+    rev: v0.4.0
+    hooks:
+      - id: repro-verify
+```
+
+`repro-verify` reads the `repro.yaml` in the repository being committed to and fails when a
+declared number no longer matches the artifact behind it. Use `repro-verify-strict` to fail on
+a check that could not run as well as one that disagreed.
+
+Verifying writes nothing. `test_read_only.py` asserts that a verification creates no files,
+modifies none, and still writes nothing when it fails, which is what makes it safe to run
+inside a commit: a verifier that could edit an artifact is one that could be made to edit an
+artifact into agreeing with the claim.
+
+This repository runs the hook on itself, against the `repro.yaml` at its root.
+
 ## The workflow
 
 ```bash
@@ -82,9 +108,9 @@ repro verify                          # check everything
 
 | Tool | CLI | PyPI | What it does |
 |------|-----|------|-------------|
-| prereg | `prereg` | [`prereg`](packages/prereg) | Freeze a plan before running, record what changed after |
-| citations | `citations` | [`citations`](packages/citations) | Verify quotations resolve in pinned source artifacts |
-| results | `results` | [`results-cli`](packages/results-cli) | Seal inputs, record outputs, bind claims to runs, verify the chain |
+| prereg | `prereg` | [`prereg`](https://pypi.org/project/prereg/) | Freeze a plan before running, record what changed after |
+| citations | `citations` | [`citations`](https://pypi.org/project/citations/) | Verify quotations resolve in pinned source artifacts |
+| results | `results` | [`results-cli`](https://pypi.org/project/results-cli/) | Seal inputs, record outputs, bind claims to runs, verify the chain |
 
 ## Inside adduce
 
@@ -114,7 +140,7 @@ This repository is a Claude Code plugin marketplace. One plugin carries all four
 /plugin install reproducible-science@reproducible-science
 ```
 
-It installs four skills, four commands and three hooks. The hooks are the part a CLI
+It installs four skills, four commands and four hooks. The hooks are the part a CLI
 cannot do, because each fires at a moment rather than when you remember to run something:
 
 | hook | fires when |

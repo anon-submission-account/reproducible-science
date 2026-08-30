@@ -1,5 +1,9 @@
 # provenance-core
 
+[![pypi](https://img.shields.io/pypi/v/provenance-core)](https://pypi.org/project/provenance-core/)
+[![python](https://img.shields.io/pypi/pyversions/provenance-core)](https://pypi.org/project/provenance-core/)
+[![license](https://img.shields.io/pypi/l/provenance-core)](https://github.com/anon-submission-account/reproducible-science/blob/main/LICENSE)
+[![docs](https://img.shields.io/badge/docs-live-blue)](https://anon-submission-account.github.io/reproducible-science/)
 
 Content digests and git references, shared by the reproducible-science tools.
 

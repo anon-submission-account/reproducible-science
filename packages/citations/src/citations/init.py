@@ -32,7 +32,7 @@ __pycache__/
 README = """\
 # Citation library
 
-Records checked by [`citations`](packages/citations).
+Records checked by [`citations`](https://pypi.org/project/citations/).
 
 ```
 records/          one file per cited work, keyed by DOI or arXiv id

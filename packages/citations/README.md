@@ -1,14 +1,18 @@
 # citations
 
+[![pypi](https://img.shields.io/pypi/v/citations)](https://pypi.org/project/citations/)
+[![python](https://img.shields.io/pypi/pyversions/citations)](https://pypi.org/project/citations/)
+[![license](https://img.shields.io/pypi/l/citations)](https://github.com/anon-submission-account/reproducible-science/blob/main/LICENSE)
+[![docs](https://img.shields.io/badge/docs-live-blue)](https://anon-submission-account.github.io/reproducible-science/)
 
 Check that the passages you quote appear in the sources you cite.
 
-Part of [reproducible-science](https://github.com/anon-submission-account/reproducible-science) alongside `repro`, `results` and `prereg` — see the [documentation](packages/citations/).
+Part of [reproducible-science](https://github.com/anon-submission-account/reproducible-science) alongside `repro`, `results` and `prereg` — see the [documentation](https://anon-submission-account.github.io/reproducible-science/tools/citations/).
 
 ## Install
 
 ```bash
-pip install "git+https://github.com/anon-submission-account/reproducible-science"
+pip install citations
 ```
 
 ## When a quotation will not resolve
@@ -141,12 +145,12 @@ establishes that the file has not changed and establishes nothing about the read
 |-----------|--------|---------|
 | `pdftotext -layout` | poppler, page geometry | `brew install poppler` · `apt install poppler-utils` |
 | `pdftotext` | the same binary, poppler's reading order | (as above) |
-| pypdf | its own content-stream parser | `pip install pypdf` |
-| pdfplumber | pdfminer.six plus its own layout layer | `pip install pdfplumber` |
+| pypdf | its own content-stream parser | `pip install "citations[pypdf]"` |
+| pdfplumber | pdfminer.six plus its own layout layer | `pip install "citations[pdfplumber]"` |
 
 Poppler is preferred and recommended. Where it is absent, or fails on a document, the chain
 falls through to whichever pure-Python reader is installed and records the substitution as a
-fallback — so `pip install "git+https://github.com/anon-submission-account/reproducible-science"` alone is enough to check a PDF, and no result is quietly
+fallback — so `pip install citations` alone is enough to check a PDF, and no result is quietly
 attributed to an extractor that did not produce it. pypdf comes before pdfplumber because it
 agreed with poppler on more of a 1,593-check corpus -- 92.7% against 90.2% -- and read a
 document in a third of the time; the measurement is in `research/pdf-readers/`.
@@ -470,7 +474,7 @@ It reports and never blocks, and stays silent in a project with no `claims/` dir
 The plugin ships instructions and hooks, not binaries, so install the tool as well:
 
 ```bash
-pip install "git+https://github.com/anon-submission-account/reproducible-science"
+uv tool install citations        # or: pip install citations
 ```
 
 All four tools in one plugin, with every hook, skill and command:

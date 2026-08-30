@@ -36,7 +36,7 @@ CI runs the same commands, so a green `make qa` locally means a green pull reque
 ## What the unusual checks are for
 
 **`lint-imports`** enforces the one architectural rule the monorepo exists to keep — the three
-tools never import the verifier, so `pip install "git+https://github.com/anon-submission-account/reproducible-science"` does not drag in an evidence
+tools never import the verifier, so `pip install citations` does not drag in an evidence
 engine.
 
 **Conformance fixtures are pinned by digest.** Their exact bytes are the fixture, so the

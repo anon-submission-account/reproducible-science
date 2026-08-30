@@ -33,7 +33,7 @@ name the program behind it cannot be compared with a later one. A source declari
 `extract_cmd` is read by the command it names, a `TEXT_SUFFIXES` source straight off disk, and
 everything else by `pdftotext -layout` or, where poppler is absent or fails on the document, by
 whichever pure-Python reader is installed. That substitution is recorded on the result as a
-fallback and its reason: `pip install "git+https://github.com/anon-submission-account/reproducible-science"` should be able to check a PDF, and a result
+fallback and its reason: `pip install citations` should be able to check a PDF, and a result
 that quietly rests on a different extractor than the one it names is worse than no result.
 
 A declared command does not join that chain. An author naming a renderer has said which
@@ -110,7 +110,7 @@ PAGE_SCAN_LIMIT = 200
 
 #: Suffixes read directly rather than through a PDF extractor. Running `pdftotext` over these
 #: returns nothing, which would read as an unreadable source.
-TEXT_SUFFIXES = (".txt", ".md", ".tei", ".xml", ".html", ".htm", ".rst")
+TEXT_SUFFIXES = (".txt", ".md", ".tei", ".xml", ".html", ".htm", ".rst", ".py")
 
 #: Recorded as the extractor for a source read straight off disk. Naming a program there would
 #: claim one ran.

@@ -8,8 +8,9 @@ authors:
     orcid: "REDACTED-FOR-REVIEW"
 type: software
 license: MIT
+doi: "REDACTED-FOR-REVIEW"
 repository-code: "https://github.com/anon-submission-account/reproducible-science"
-url: "https://github.com/anon-submission-account/reproducible-science"
+url: "https://anon-submission-account.github.io/reproducible-science/"
 abstract: >-
   Four command-line tools and one Claude Code plugin for keeping a paper's
   claims tied to what backs them. prereg freezes an analysis plan against a
@@ -26,5 +27,5 @@ keywords:
   - provenance
   - research integrity
   - open science
-version: "0.2.0"
-date-released: "2026-08-25"
+version: "0.4.2"
+date-released: "2026-08-29"

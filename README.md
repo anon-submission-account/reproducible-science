@@ -1,5 +1,13 @@
 # reproducible-science
 
+[![CI](https://img.shields.io/github/actions/workflow/status/anon-submission-account/reproducible-science/ci.yml?branch=main&logo=github&label=CI)](https://github.com/anon-submission-account/reproducible-science/actions?query=branch%3Amain+workflow%3ACI)
+[![coverage](https://img.shields.io/codecov/c/github/anon-submission-account/reproducible-science?logo=codecov&logoColor=white)](https://codecov.io/gh/anon-submission-account/reproducible-science)
+[![pypi](https://img.shields.io/pypi/v/reproducible-science)](https://pypi.org/project/reproducible-science/)
+[![python](https://img.shields.io/pypi/pyversions/reproducible-science)](https://pypi.org/project/reproducible-science/)
+[![license](https://img.shields.io/pypi/l/reproducible-science)](LICENSE)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+[![DOI](REDACTED-FOR-REVIEW)](https://doi.org/REDACTED-FOR-REVIEW)
+
 Command-line tools that check whether a paper's claims match its artifacts.
 
 1. **Three outcomes kept apart**: a value that disagrees, a value the artifact is silent on,
@@ -12,10 +20,10 @@ Command-line tools that check whether a paper's claims match its artifacts.
    location in a machine-readable file, a cell in a table — through one engine and one report.
 
 ```bash
-pip install "git+https://github.com/anon-submission-account/reproducible-science"
+pip install reproducible-science
 ```
 
-See our [Claude Code plugin](packages/repro/plugin/),
+See our [Claude Code plugin](https://anon-submission-account.github.io/reproducible-science/start/claude-code/),
 which traces results at the time of experimentation.
 
 ```text
@@ -29,13 +37,15 @@ either fallback on a measured corpus, and every result records which extractor p
 ```bash
 brew install poppler                  # macOS
 sudo apt install poppler-utils        # Debian/Ubuntu
-pip install pdfplumber pypdf          # no system package available
+pip install "citations[pdf]"          # no system package available
 ```
 
 ## Documentation
 
-[docs/](docs/) for the specification and the decision reference, [jupyterlite/](jupyterlite/)
-for notebooks that run the tools in a browser.
+**[anon-submission-account.github.io/reproducible-science](https://anon-submission-account.github.io/reproducible-science/)**
+
+The docs include a notebook that runs the published packages in your browser, with nothing to
+install.
 
 ## Install
 
@@ -46,14 +56,8 @@ for notebooks that run the tools in a browser.
 | [`citations`](packages/citations) | that a quoted passage occurs in the source cited for it |
 | [`repro`](packages/repro) | that every declared claim holds against its pinned artifact, and which ones do not |
 
-One install brings all four:
-
-```bash
-pip install "git+https://github.com/anon-submission-account/reproducible-science"
-```
-
-Each is also its own distribution, so a checkout can install one alone with
-`pip install -e packages/prereg`.
+`pip install reproducible-science` brings all four. Each is also its own distribution —
+`prereg`, `citations`, `results-cli` — so installing one brings only that one.
 
 ## Getting started
 

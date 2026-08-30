@@ -1,6 +1,6 @@
 """Pure-Python PDF readers, for a machine with no poppler on it.
 
-`pip install "git+https://github.com/anon-submission-account/reproducible-science"` cannot install a system package, and `pdftotext` is the one thing
+`pip install citations` cannot install a system package, and `pdftotext` is the one thing
 `verify` needed that pip cannot supply. These two stand in where it is absent. Both are
 optional: a missing one is reported, never imported at call time and never raised as an
 `ImportError` out of a check.
@@ -30,12 +30,12 @@ from collections.abc import Callable
 
 from citations.exceptions import SourceUnreadableError
 
-try:  # optional: `pip install pdfplumber`
+try:  # optional: `pip install "citations[pdfplumber]"`
     import pdfplumber
 except ImportError:  # pragma: no cover - exercised by the extras matrix, not the suite
     pdfplumber = None
 
-try:  # optional: `pip install pypdf`
+try:  # optional: `pip install "citations[pypdf]"`
     import pypdf
 except ImportError:  # pragma: no cover
     pypdf = None
@@ -69,7 +69,7 @@ class Reader:
 def _read_pdfplumber(pdf: pathlib.Path, page: int | None) -> str:
     if pdfplumber is None:
         raise SourceUnreadableError(
-            pdf, 'pdfplumber is not installed -- pip install pdfplumber pypdf'
+            pdf, 'pdfplumber is not installed -- pip install "citations[pdf]"'
         )
     try:
         with pdfplumber.open(pdf) as doc:
@@ -89,7 +89,7 @@ def _read_pdfplumber(pdf: pathlib.Path, page: int | None) -> str:
 
 def _read_pypdf(pdf: pathlib.Path, page: int | None) -> str:
     if pypdf is None:
-        raise SourceUnreadableError(pdf, 'pypdf is not installed -- pip install pdfplumber pypdf')
+        raise SourceUnreadableError(pdf, 'pypdf is not installed -- pip install "citations[pdf]"')
     try:
         reader = pypdf.PdfReader(str(pdf))
         if page:

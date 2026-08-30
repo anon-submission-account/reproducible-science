@@ -198,7 +198,7 @@ And the shared vocabulary stops being a propagation project -- one codebase, one
 tree. The layering that `import-linter` currently enforces across packages it
 enforces equally well across modules.
 
-The cost is that `pip install "git+https://github.com/anon-submission-account/reproducible-science"` stops working for anyone who has it. The
+The cost is that `pip install citations` stops working for anyone who has it. The
 packages are two months old with few users and already release together, so the
 break is cheap now and expensive after any promotion. That is the same reasoning
 as fixing the contract before it has consumers, and it points the same way: do it
@@ -234,6 +234,19 @@ raised them concedes. Fine as replication, wrong as a home.
 - `provenance_core/digests.py` justifies itself with "a platform whose default
   encoding is not UTF-8", but `str.encode()` defaults to UTF-8 in CPython 3
   regardless of locale. The consolidation is still right; the stated reason is not.
+
+- `research/pdf-readers/bench_real_corpus.py` records the corpus root as it was
+  given: line 29 reads `CORPUS_ROOT` from the environment, line 140 writes
+  `str(ROOT)` into the artifact. The run behind `real_corpus_by_reader.json` was
+  invoked with an absolute path, so the artifact carries a home directory and a
+  private repository name in `/corpus/root`, and two `pdf-extract` panic strings
+  carry a cargo registry path under the same home. The default is the relative
+  `"corpus"`, so re-running it from the corpus directory records a relative root
+  and the artifact stops naming a machine. Not urgent: the file is byte-identical
+  to the copy the paper repository pins (`4bdb0228`), that repository is private,
+  and the anonymized drop substitutes both strings before its manifest is built.
+  Re-running changes the six per-reader counts the manuscript prints, so it waits
+  until nothing is pinned to them.
 
 ## Relationship to adduce
 

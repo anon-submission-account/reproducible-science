@@ -1,14 +1,18 @@
 # results
 
+[![pypi](https://img.shields.io/pypi/v/results-cli)](https://pypi.org/project/results-cli/)
+[![python](https://img.shields.io/pypi/pyversions/results-cli)](https://pypi.org/project/results-cli/)
+[![license](https://img.shields.io/pypi/l/results-cli)](https://github.com/anon-submission-account/reproducible-science/blob/main/LICENSE)
+[![docs](https://img.shields.io/badge/docs-live-blue)](https://anon-submission-account.github.io/reproducible-science/)
 
 Seal inputs, record outputs, and bind a paper's claims to the runs behind them.
 
-Part of [reproducible-science](https://github.com/anon-submission-account/reproducible-science) alongside `repro`, `citations` and `prereg` — see the [documentation](packages/results/).
+Part of [reproducible-science](https://github.com/anon-submission-account/reproducible-science) alongside `repro`, `citations` and `prereg` — see the [documentation](https://anon-submission-account.github.io/reproducible-science/tools/results/).
 
 ## Install
 
 ```bash
-pip install "git+https://github.com/anon-submission-account/reproducible-science"
+pip install results-cli
 ```
 
 ## Quick start
@@ -118,7 +122,7 @@ It reports and never blocks, and stays silent in a project with no `.results/` l
 The plugin ships instructions and hooks, not binaries, so install the tool as well:
 
 ```bash
-pip install "git+https://github.com/anon-submission-account/reproducible-science"
+uv tool install results-cli    # or: pip install results-cli
 ```
 
 All four tools in one plugin, with every hook, skill and command:

@@ -1,0 +1,33 @@
+{
+  "title": "reproducible-science: preregistration, citation verification, and results provenance",
+  "upload_type": "software",
+  "description": "Four command-line tools and one Claude Code plugin for keeping a paper's claims tied to what backs them. prereg freezes an analysis plan against a commit and a content hash before a run. results seals a run's inputs, records its outputs, and binds each number in a manuscript to the run behind it. citations checks that quoted passages appear in the sources they cite. repro verifies declared evidence assertions against pinned artifacts, reporting execution, extraction and comparison separately so that a value which disagrees, a value that is absent, and a check that never ran are three different answers.",
+  "creators": [
+    {
+      "name": "Author, Anonymous",
+      "orcid": "REDACTED-FOR-REVIEW"
+    }
+  ],
+  "license": "MIT",
+  "access_right": "open",
+  "keywords": [
+    "reproducibility",
+    "preregistration",
+    "provenance",
+    "research integrity",
+    "open science",
+    "evidence verification"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/anon-submission-account/reproducible-science",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://anon-submission-account.github.io/reproducible-science/",
+      "relation": "isDocumentedBy",
+      "scheme": "url"
+    }
+  ]
+}

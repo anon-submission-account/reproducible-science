@@ -18,6 +18,7 @@ where they disagree. A rule with no gate is a comment.
 from __future__ import annotations
 
 import argparse
+import datetime
 import pathlib
 import re
 
@@ -33,7 +34,37 @@ PACKAGES = {
     "provenance-core": PROJECT_ROOT / "packages" / "provenance-core" / "pyproject.toml",
 }
 
+#: The Claude Code plugin manifests, which carry the same release version and were not
+#: written by anything. They sat at 0.2.0 through two releases: nothing read them, so nothing
+#: could say they were stale, and a reader comparing the plugin to PyPI found a mismatch.
+#: `site/.vscode/launch.json` also carries `"version": "0.2.0"` and is not one of these -- that
+#: is VS Code's schema version and has nothing to do with this project.
+PLUGIN_MANIFESTS = (
+    PROJECT_ROOT / ".claude-plugin" / "marketplace.json",
+    PROJECT_ROOT / "packages" / "citations" / "plugin" / ".claude-plugin" / "plugin.json",
+    PROJECT_ROOT / "packages" / "prereg" / "plugin" / ".claude-plugin" / "plugin.json",
+    PROJECT_ROOT / "packages" / "results" / "plugin" / ".claude-plugin" / "plugin.json",
+    PROJECT_ROOT / "packages" / "repro" / "plugin" / ".claude-plugin" / "plugin.json",
+)
+
+#: The citation record, which carries the release version too and was owned by nothing. It
+#: read 0.2.0 while the distributions were at 0.4.0 -- three releases -- and the anonymized
+#: artifact drop is what surfaced it, because that is the file a reviewer cites from.
+CITATION = PROJECT_ROOT / "CITATION.cff"
+
+#: The install snippet in `.pre-commit-hooks.yaml`, which pins a tag for anyone copying it. It
+#: said `repro-v0.3.0` while the release was 0.4.0, so following the documentation pinned a
+#: version behind. Owned here for the same reason the plugin manifests and the citation record
+#: are: a version string in prose that nothing writes is a version string that goes stale.
+HOOKS = PROJECT_ROOT / ".pre-commit-hooks.yaml"
+
+HOOK_REV = re.compile(r"^(?P<head>#\s+rev:\s*)v(?P<version>[0-9][^\s]*)", re.M)
+
+CFF_VERSION = re.compile(r'^(?P<head>version:\s*")(?P<version>[^"]+)(?P<tail>")', re.M)
+CFF_DATE = re.compile(r'^(?P<head>date-released:\s*")(?P<date>[^"]+)(?P<tail>")', re.M)
+
 VERSION_LINE = re.compile(r'^version = "([^"]+)"$', re.M)
+JSON_VERSION = re.compile(r'(?P<head>"version":\s*")(?P<version>[^"]+)(?P<tail>")')
 SEMVER = re.compile(r"^\d+\.\d+\.\d+([ab]\d+|rc\d+)?$")
 
 
@@ -48,6 +79,37 @@ def declared() -> dict[str, str]:
         if not m:
             raise VersionError(f'{path.relative_to(PROJECT_ROOT)}: no `version = "..."` line')
         out[name] = m.group(1)
+    return out
+
+
+def hook_rev() -> str | None:
+    """The version the published pre-commit snippet tells people to pin, or None."""
+    if not HOOKS.exists():
+        return None
+    m = HOOK_REV.search(HOOKS.read_text())
+    return m.group("version") if m else None
+
+
+def citation_version() -> str | None:
+    """What `CITATION.cff` says the release is, or None where there is no such file."""
+    if not CITATION.exists():
+        return None
+    m = CFF_VERSION.search(CITATION.read_text())
+    if not m:
+        raise VersionError(f"{CITATION.name}: no `version:` line")
+    return m.group("version")
+
+
+def plugin_versions() -> dict[pathlib.Path, str]:
+    """What each plugin manifest declares, by path."""
+    out: dict[pathlib.Path, str] = {}
+    for path in PLUGIN_MANIFESTS:
+        if not path.exists():
+            continue
+        m = JSON_VERSION.search(path.read_text())
+        if not m:
+            raise VersionError(f'{path.relative_to(PROJECT_ROOT)}: no `"version"` field')
+        out[path] = m.group("version")
     return out
 
 
@@ -140,6 +202,24 @@ def check() -> list[str]:
                     f"{path.relative_to(PROJECT_ROOT)}: depends on {dep}{spec}, "
                     f"but lockstep {version} wants {dep}{want}"
                 )
+
+    pinned = hook_rev()
+    if pinned is not None and pinned != version:
+        problems.append(
+            f".pre-commit-hooks.yaml: the install snippet pins v{pinned}, "
+            f"but the release is {version}"
+        )
+
+    cited = citation_version()
+    if cited is not None and cited != version:
+        problems.append(f"CITATION.cff: version {cited}, but the release is {version}")
+
+    for path, declared_version in plugin_versions().items():
+        if declared_version != version:
+            problems.append(
+                f"{path.relative_to(PROJECT_ROOT)}: plugin version {declared_version}, "
+                f"but the release is {version}"
+            )
     return problems
 
 
@@ -175,6 +255,36 @@ def bump(version: str, realign: bool = False) -> list[str]:
                     continue
                 body = re.sub(rf'"{re.escape(dep)}(?:[><=!~][^"]*)?"', f'"{dep}{want}"', body)
             text = text[: span[0]] + body + text[span[1] :]
+        if text != original:
+            path.write_text(text)
+            touched.append(str(path.relative_to(PROJECT_ROOT)))
+
+    # The citation record carries the release version and the date it went out. The version is
+    # checked; the date is written and not checked, because there is nothing to check it
+    # against -- a bump run a few days before the tag leaves it a few days early, which is a
+    # great deal better than the three releases stale it was.
+    if HOOKS.exists():
+        text = original = HOOKS.read_text()
+        text = HOOK_REV.sub(rf"\g<head>v{version}", text, count=1)
+        if text != original:
+            HOOKS.write_text(text)
+            touched.append(HOOKS.name)
+
+    if CITATION.exists():
+        text = original = CITATION.read_text()
+        text = CFF_VERSION.sub(rf"\g<head>{version}\g<tail>", text, count=1)
+        text = CFF_DATE.sub(rf"\g<head>{datetime.date.today().isoformat()}\g<tail>", text, count=1)
+        if text != original:
+            CITATION.write_text(text)
+            touched.append(CITATION.name)
+
+    # The plugin manifests carry the same release version. Written here rather than by hand,
+    # because by hand is what left them at 0.2.0 across two releases.
+    for path in PLUGIN_MANIFESTS:
+        if not path.exists():
+            continue
+        text = original = path.read_text()
+        text = JSON_VERSION.sub(rf"\g<head>{version}\g<tail>", text, count=1)
         if text != original:
             path.write_text(text)
             touched.append(str(path.relative_to(PROJECT_ROOT)))

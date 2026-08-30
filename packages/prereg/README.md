@@ -1,14 +1,18 @@
 # prereg
 
+[![pypi](https://img.shields.io/pypi/v/prereg)](https://pypi.org/project/prereg/)
+[![python](https://img.shields.io/pypi/pyversions/prereg)](https://pypi.org/project/prereg/)
+[![license](https://img.shields.io/pypi/l/prereg)](https://github.com/anon-submission-account/reproducible-science/blob/main/LICENSE)
+[![docs](https://img.shields.io/badge/docs-live-blue)](https://anon-submission-account.github.io/reproducible-science/)
 
 Freeze a plan before you run it, and record what changed after.
 
-Part of [reproducible-science](https://github.com/anon-submission-account/reproducible-science) alongside `repro`, `citations` and `results` — see the [documentation](packages/prereg/).
+Part of [reproducible-science](https://github.com/anon-submission-account/reproducible-science) alongside `repro`, `citations` and `results` — see the [documentation](https://anon-submission-account.github.io/reproducible-science/tools/prereg/).
 
 ## Install
 
 ```bash
-pip install "git+https://github.com/anon-submission-account/reproducible-science"
+pip install prereg
 ```
 
 ## Quick start
@@ -129,7 +133,7 @@ It reports and never blocks, and stays silent in a project with no frozen plan.
 The plugin ships instructions and hooks, not binaries, so install the tool as well:
 
 ```bash
-pip install "git+https://github.com/anon-submission-account/reproducible-science"
+uv tool install prereg        # or: pip install prereg
 ```
 
 All four tools in one plugin, with every hook, skill and command:
